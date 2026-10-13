@@ -88,9 +88,93 @@ const defaultLines = [
   },
 ];
 
+const draftStorageKey = 'zugferd-example.invoice-draft.v1';
+const defaultPersistenceNotice = 'Ihre Eingaben werden automatisch lokal in diesem Browser gespeichert.';
+
 const state = {
   lines: structuredClone(defaultLines),
 };
+
+function setPersistenceNotice(message, isError = false) {
+  const notice = document.getElementById('persistenceNotice');
+  notice.textContent = message;
+  if (isError) {
+    notice.dataset.state = 'error';
+  } else {
+    delete notice.dataset.state;
+  }
+}
+
+function isSavedLines(value) {
+  const fields = ['description', 'quantity', 'unit', 'unitPrice', 'discount', 'vat'];
+  const numericFields = ['quantity', 'unitPrice', 'discount', 'vat'];
+
+  return Array.isArray(value)
+    && value.length > 0
+    && value.every((line) => line
+      && typeof line === 'object'
+      && fields.every((field) => typeof line[field] === 'string')
+      && numericFields.every((field) => line[field] === '' || Number.isFinite(Number(line[field]))));
+}
+
+function loadDraft() {
+  let serializedDraft;
+  try {
+    serializedDraft = localStorage.getItem(draftStorageKey);
+  } catch (error) {
+    console.error('Der gespeicherte Rechnungsentwurf konnte nicht gelesen werden.', error);
+    setPersistenceNotice('Gespeicherte Eingaben konnten nicht geladen werden. Bitte prüfen Sie die Speichereinstellungen Ihres Browsers.', true);
+    return;
+  }
+
+  if (!serializedDraft) return;
+
+  try {
+    const draft = JSON.parse(serializedDraft);
+    if (draft.version !== 1
+      || !draft.fields
+      || typeof draft.fields !== 'object'
+      || Array.isArray(draft.fields)
+      || !isSavedLines(draft.lines)) {
+      throw new Error('Der gespeicherte Rechnungsentwurf hat ein ungültiges Format.');
+    }
+
+    for (const [field, value] of Object.entries(draft.fields)) {
+      if (typeof value !== 'string') continue;
+      const control = document.getElementById(field);
+      if (!(control instanceof HTMLInputElement)
+        && !(control instanceof HTMLSelectElement)
+        && !(control instanceof HTMLTextAreaElement)) continue;
+      if (control instanceof HTMLSelectElement
+        && !Array.from(control.options).some((option) => option.value === value)) continue;
+      control.value = value;
+    }
+
+    state.lines = draft.lines;
+  } catch (error) {
+    console.error('Der gespeicherte Rechnungsentwurf konnte nicht wiederhergestellt werden.', error);
+    setPersistenceNotice('Gespeicherte Eingaben konnten nicht wiederhergestellt werden. Ändern Sie ein Feld, um einen neuen Entwurf zu speichern.', true);
+  }
+}
+
+function saveDraft() {
+  const fields = Object.fromEntries(
+    Array.from(document.querySelectorAll('input[id], select[id], textarea[id]'))
+      .map((control) => [control.id, control.value]),
+  );
+
+  try {
+    localStorage.setItem(draftStorageKey, JSON.stringify({
+      version: 1,
+      fields,
+      lines: state.lines,
+    }));
+    setPersistenceNotice(defaultPersistenceNotice);
+  } catch (error) {
+    console.error('Der Rechnungsentwurf konnte nicht lokal gespeichert werden.', error);
+    setPersistenceNotice('Lokales Speichern nicht möglich. Ihre Änderungen gehen beim Neuladen verloren.', true);
+  }
+}
 
 function getInputValue(id) {
   return document.getElementById(id)?.value?.trim() ?? '';
@@ -321,11 +405,11 @@ function renderLineRows() {
       return `
         <tr data-index="${index}">
           <td><input class="table-input" data-line-index="${index}" data-field="description" value="${escapeXml(line.description)}" /></td>
-          <td><input class="table-input" data-line-index="${index}" data-field="quantity" type="number" min="0" step="0.01" value="${Number(line.quantity || 0).toString()}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="quantity" type="number" min="0" step="0.01" value="${escapeXml(line.quantity)}" /></td>
           <td><input class="table-input" data-line-index="${index}" data-field="unit" value="${escapeXml(line.unit)}" /></td>
-          <td><input class="table-input" data-line-index="${index}" data-field="unitPrice" type="number" min="0" step="0.01" value="${Number(line.unitPrice || 0).toFixed(2)}" /></td>
-          <td><input class="table-input" data-line-index="${index}" data-field="discount" type="number" min="0" max="100" step="0.01" value="${Number(line.discount || 0).toFixed(2)}" /></td>
-          <td><input class="table-input" data-line-index="${index}" data-field="vat" type="number" min="0" max="100" step="0.01" value="${Number(line.vat || 0).toFixed(2)}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="unitPrice" type="number" min="0" step="0.01" value="${escapeXml(line.unitPrice)}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="discount" type="number" min="0" max="100" step="0.01" value="${escapeXml(line.discount)}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="vat" type="number" min="0" max="100" step="0.01" value="${escapeXml(line.vat)}" /></td>
           <td><div class="line-total">${currencyFormatter.format(amounts.grossLine)}</div></td>
           <td>
             <button type="button" class="icon-button" data-remove-line="${index}" aria-label="Position löschen">
@@ -360,6 +444,7 @@ function addLine() {
     vat: '19',
   });
   renderLineRows();
+  saveDraft();
 }
 
 function removeLine(index) {
@@ -378,6 +463,7 @@ function removeLine(index) {
     state.lines.splice(index, 1);
   }
   renderLineRows();
+  saveDraft();
 }
 
 function isFormValid() {
@@ -1101,10 +1187,21 @@ document.addEventListener('input', (event) => {
     const lineIndex = Number(target.dataset.lineIndex);
     const field = target.dataset.field;
     syncLineFromInput(lineIndex, field, target.value);
+    saveDraft();
     return;
   }
 
   updateTotals();
+  saveDraft();
+});
+
+document.addEventListener('change', (event) => {
+  const target = event.target;
+  if (target instanceof HTMLInputElement
+    || target instanceof HTMLSelectElement
+    || target instanceof HTMLTextAreaElement) {
+    saveDraft();
+  }
 });
 
 document.addEventListener('click', (event) => {
@@ -1147,6 +1244,7 @@ document.getElementById('paymentMethod').addEventListener('change', () => {
   updateTotals();
 });
 
+loadDraft();
 updateProfileInfo();
 updatePaymentFields();
 renderLineRows();

@@ -62,15 +62,16 @@ assurance of legal or tax correctness.
 - Generate valid files only; display validation errors before allowing download.
 - Download a neutral-layout A4 portrait PDF/A-3 with the profile-specific XML
   embedded; do not offer appearance customization in the first version.
-- Keep entered data and document generation in the browser; do not transmit or
-  persist invoice data.
+- Keep entered data and document generation in the browser; do not transmit
+  invoice data. Automatically persist the current draft in browser local
+  storage so it is restored after reload.
 - Generate sample/test output only. Exact supported profile names, technical
   validation requirements, and rounding behavior must be verified against the
   selected standard release before implementation.
 
 ## Product Principles
 
-- Keep invoice data on the user's device.
+- Keep invoice data on the user's device and never transmit it to a server.
 - Make calculated amounts and their VAT basis explicit.
 - Generate output for a clearly identified profile rather than implying one
   generic format fits every profile.

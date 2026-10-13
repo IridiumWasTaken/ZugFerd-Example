@@ -67,6 +67,15 @@ button {
   gap: 16px;
 }
 
+.draft-notice {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.draft-notice[data-state="error"] {
+  color: var(--danger);
+}
+
 .brand-mark {
   display: grid;
   place-items: center;
