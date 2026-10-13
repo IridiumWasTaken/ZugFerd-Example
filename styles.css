@@ -54,17 +54,47 @@ button {
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 14px;
   padding: 2px 0;
 }
 
+.title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  width: 100%;
+}
+
 .brand-block {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.project-summary {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 2px 10px;
+}
+
+.project-summary h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--brand-deep);
+}
+
+.project-summary p {
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  color: var(--muted);
 }
 
 .draft-notice {
