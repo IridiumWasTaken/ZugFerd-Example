@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generator für Test-E-Rechnungen | ZUGFeRD / Factur-X</title>
+    <meta
+      name="description"
+      content="Browser-basierter Generator für ZUGFeRD/Factur-X Test-E-Rechnungen ohne Server"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">Z</div>
+          <h1>Generator für Test-E-Rechnungen</h1>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="panel form-panel invoice-layout-two-column">
+            <div class="panel-head section-head">
+              <h2 class="invoice-title">Rechnung</h2>
+              <div class="header-actions">
+                <label class="compact-profile-field">
+                  <span class="sr-only">Profil</span>
+                  <select id="profileSelect" class="compact-profile-select">
+                    <option value="basic">Factur-X BASIC</option>
+                    <option value="basicwl">Factur-X BASIC WL</option>
+                    <option value="en16931" selected>EN 16931 / ZUGFeRD</option>
+                    <option value="xrechnung">XRechnung</option>
+                  </select>
+                </label>
+                <button type="button" class="profile-help-button" id="openProfileHelpButton" aria-label="Profilhilfe öffnen" aria-haspopup="dialog" aria-controls="profileHelpDialog">?</button>
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <label class="form-field">
+                <span>Rechnungsnummer</span>
+                <input id="invoiceNumber" type="text" value="2026-0001" />
+              </label>
+              <label class="form-field">
+                <span>Rechnungsdatum</span>
+                <input id="invoiceDate" type="date" value="2026-10-13" />
+              </label>
+              <label class="form-field">
+                <span>Fälligkeitsdatum</span>
+                <input id="dueDate" type="date" value="2026-11-12" />
+              </label>
+              <label class="form-field">
+                <span>Kunden-/Auftrag</span>
+                <input id="customerReference" type="text" value="K-2026-4711" />
+              </label>
+              <label class="form-field">
+                <span>Kundenbestellnummer</span>
+                <input id="buyerOrderNumber" type="text" value="PO-2026-0815" />
+              </label>
+              <label class="form-field wide">
+                <span>Verwendungszweck / Beleg</span>
+                <input id="commission" type="text" value="Testintegration - Rechnungsbeleg" />
+              </label>
+              <label class="form-field">
+                <span>Zahlungsart</span>
+                <select id="paymentMethod">
+                  <optgroup label="Überweisung">
+                    <option value="58" selected>SEPA-Überweisung</option>
+                    <option value="30">Überweisung</option>
+                  </optgroup>
+                  <optgroup label="Lastschrift">
+                    <option value="59">SEPA-Lastschrift</option>
+                    <option value="49">Lastschrift</option>
+                  </optgroup>
+                  <optgroup label="Weitere Zahlungsarten">
+                    <option value="10">Barzahlung</option>
+                    <option value="20">Scheck</option>
+                    <option value="54">Kreditkarte</option>
+                    <option value="55">Debitkarte</option>
+                    <option value="48">Bankkarte</option>
+                    <option value="68">Online-Zahlungsdienst</option>
+                    <option value="57">Vereinbarte Zahlungsart</option>
+                  </optgroup>
+                </select>
+                <span id="paymentMethodHint" class="field-hint" role="status" hidden></span>
+              </label>
+              <label class="form-field" id="paymentIbanField">
+                <span>IBAN Zahlungsempfänger</span>
+                <input id="paymentIban" type="text" inputmode="text" autocomplete="off" value="DE89370400440532013000" />
+              </label>
+              <label class="form-field" id="debtorIbanField" hidden>
+                <span>IBAN Zahler</span>
+                <input id="debtorIban" type="text" inputmode="text" autocomplete="off" value="DE89370400440532013000" />
+              </label>
+              <label class="form-field" id="mandateReferenceField" hidden>
+                <span>Lastschrift-Mandatsreferenz</span>
+                <input id="mandateReference" type="text" value="MANDAT-2026-001" />
+              </label>
+              <label class="form-field" id="creditorIdentifierField" hidden>
+                <span>Gläubiger-ID</span>
+                <input id="creditorIdentifier" type="text" value="DE98ZZZ09999999999" />
+              </label>
+              <label class="form-field wide">
+                <span>Zahlungsbedingungen</span>
+                <input id="paymentTerms" type="text" value="Zahlung innerhalb von 14 Tagen netto" />
+              </label>
+            </div>
+
+            <div class="form-columns">
+              <div class="form-column">
+                <h3>Absender</h3>
+                <div class="field-grid vertical">
+                  <label class="form-field">
+                    <span>Unternehmen</span>
+                    <input id="sellerName" type="text" value="ZUGFeRD Beispiel GmbH" />
+                  </label>
+                  <label class="form-field">
+                    <span>Straße + Nr.</span>
+                    <input id="sellerStreet" type="text" value="Musterstraße 12" />
+                  </label>
+                  <label class="form-field">
+                    <span>Adresszusatz</span>
+                    <input id="sellerAddress2" type="text" value="Büro 3" />
+                  </label>
+                  <div class="split-fields">
+                    <label class="form-field">
+                      <span>PLZ</span>
+                      <input id="sellerPostal" type="text" value="10115" />
+                    </label>
+                    <label class="form-field">
+                      <span>Ort</span>
+                      <input id="sellerCity" type="text" value="Berlin" />
+                    </label>
+                  </div>
+                  <label class="form-field">
+                    <span>Land</span>
+                    <input id="sellerCountry" type="text" value="DE" />
+                  </label>
+                  <label class="form-field">
+                    <span>USt-ID</span>
+                    <input id="sellerVat" type="text" value="DE123456789" />
+                  </label>
+                  <label class="form-field">
+                    <span>E-Mail / Kontakt</span>
+                    <input id="sellerContact" type="text" value="integration@example.de" />
+                  </label>
+                  <label class="form-field">
+                    <span>Kontaktperson (für XRechnung)</span>
+                    <input id="sellerContactName" type="text" value="Integrationsteam" />
+                  </label>
+                  <label class="form-field">
+                    <span>Telefon (für XRechnung)</span>
+                    <input id="sellerPhone" type="tel" value="+49 30 1234567" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-column">
+                <h3>Empfänger</h3>
+                <div class="field-grid vertical">
+                  <label class="form-field">
+                    <span>Unternehmen</span>
+                    <input id="buyerName" type="text" value="Beispielhandel AG" />
+                  </label>
+                  <label class="form-field">
+                    <span>Straße + Nr.</span>
+                    <input id="buyerStreet" type="text" value="Industriestraße 88" />
+                  </label>
+                  <label class="form-field">
+                    <span>Adresszusatz</span>
+                    <input id="buyerAddress2" type="text" value="Hauptgebäude" />
+                  </label>
+                  <div class="split-fields">
+                    <label class="form-field">
+                      <span>PLZ</span>
+                      <input id="buyerPostal" type="text" value="80331" />
+                    </label>
+                    <label class="form-field">
+                      <span>Ort</span>
+                      <input id="buyerCity" type="text" value="München" />
+                    </label>
+                  </div>
+                  <label class="form-field">
+                    <span>Land</span>
+                    <input id="buyerCountry" type="text" value="DE" />
+                  </label>
+                  <label class="form-field">
+                    <span>USt-ID</span>
+                    <input id="buyerVat" type="text" value="DE987654321" />
+                  </label>
+                  <label class="form-field">
+                    <span>E-Mail / Kontakt</span>
+                    <input id="buyerContact" type="text" value="rechnung@beispielhandel.de" />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-head lines-head">
+              <h3>Positionen</h3>
+              <button type="button" class="secondary-button" id="addLineButton">Position hinzufügen</button>
+            </div>
+
+            <div class="line-table">
+              <table class="invoice-table">
+                <thead>
+                  <tr>
+                    <th>Beschreibung</th>
+                    <th>Menge</th>
+                    <th>Einheit</th>
+                    <th>Preis</th>
+                    <th>Rabatt %</th>
+                    <th>USt %</th>
+                    <th>Gesamt</th>
+                    <th>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="lineRows"></tbody>
+              </table>
+            </div>
+
+            <section class="summary-panel" aria-labelledby="summaryHeading">
+              <div class="panel-head">
+                <h2 id="summaryHeading">Rechnungsübersicht</h2>
+              </div>
+              <div class="summary-list">
+                <div class="summary-row">
+                  <span>Netto</span>
+                  <strong id="totalNet">€0,00</strong>
+                </div>
+                <div class="summary-row">
+                  <span>USt.</span>
+                  <strong id="totalVat">€0,00</strong>
+                </div>
+                <div class="summary-row highlight-row">
+                  <span>Brutto</span>
+                  <strong id="totalGross">€0,00</strong>
+                </div>
+              </div>
+            </section>
+
+            <div id="validationErrors" class="validation-errors" aria-live="polite"></div>
+
+            <div class="actions">
+              <button type="button" class="secondary-button" id="validateButton">Validierung prüfen</button>
+              <button type="button" class="primary-button" id="downloadButton">PDF herunterladen</button>
+            </div>
+        </section>
+    </div>
+
+    <dialog class="profile-help-dialog" id="profileHelpDialog" aria-labelledby="profileTitle">
+      <div class="profile-help-dialog__header">
+        <div>
+          <h2 id="profileTitle">EN 16931 / ZUGFeRD</h2>
+          <p class="profile-help-dialog__label">Profilhilfe</p>
+        </div>
+        <form method="dialog">
+          <button type="submit" class="profile-help-dialog__close" aria-label="Profilhilfe schließen">Schließen</button>
+        </form>
+      </div>
+      <p id="profileDescription">Breit kompatibel und gut für allgemeine ZUGFeRD-Tests geeignet. Für XRechnung gelten zusätzliche Pflichtfelder.</p>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
