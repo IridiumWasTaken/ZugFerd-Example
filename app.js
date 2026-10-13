@@ -45,7 +45,7 @@ const profileGuidance = {
   },
   basicwl: {
     title: 'Factur-X BASIC WL',
-    description: 'Factur-X BASIC mit erweiterten Liefer-/Zahlungsdaten. Prüfen Sie die gewählten Felder vor dem Download genau.',
+    description: 'Factur-X BASIC mit erweiterten Liefer-/Zahlungsdaten. Das BASIC-WL-XML enthält keine Rechnungspositionen und daher auch keine Artikelnummern.',
   },
   en16931: {
     title: 'EN 16931 / ZUGFeRD',
@@ -63,6 +63,7 @@ const cardPaymentMethods = new Set(['48', '54', '55']);
 
 const defaultLines = [
   {
+    itemNumber: 'SW-001',
     description: 'Software-Integrationstest für Fakturauswertung',
     quantity: '1',
     unit: 'Stk.',
@@ -71,6 +72,7 @@ const defaultLines = [
     vat: '19',
   },
   {
+    itemNumber: 'SV-002',
     description: 'Support, Anpassung und technische Validierung',
     quantity: '2',
     unit: 'Std.',
@@ -79,6 +81,7 @@ const defaultLines = [
     vat: '19',
   },
   {
+    itemNumber: 'QA-003',
     description: 'Zugangsprüfung, Testdaten und Protokollierung',
     quantity: '1',
     unit: 'Paket',
@@ -114,6 +117,7 @@ function isSavedLines(value) {
     && value.every((line) => line
       && typeof line === 'object'
       && fields.every((field) => typeof line[field] === 'string')
+      && (line.itemNumber === undefined || typeof line.itemNumber === 'string')
       && numericFields.every((field) => line[field] === '' || Number.isFinite(Number(line[field]))));
 }
 
@@ -150,7 +154,10 @@ function loadDraft() {
       control.value = value;
     }
 
-    state.lines = draft.lines;
+    state.lines = draft.lines.map((line) => ({
+      ...line,
+      itemNumber: line.itemNumber ?? '',
+    }));
   } catch (error) {
     console.error('Der gespeicherte Rechnungsentwurf konnte nicht wiederhergestellt werden.', error);
     setPersistenceNotice('Gespeicherte Eingaben konnten nicht wiederhergestellt werden. Ändern Sie ein Feld, um einen neuen Entwurf zu speichern.', true);
@@ -404,7 +411,8 @@ function renderLineRows() {
       const amounts = calculateLineAmounts(line);
       return `
         <tr data-index="${index}">
-          <td><input class="table-input" data-line-index="${index}" data-field="description" value="${escapeXml(line.description)}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="itemNumber" aria-label="Artikelnummer für Position ${index + 1}" value="${escapeXml(line.itemNumber ?? '')}" /></td>
+          <td><input class="table-input" data-line-index="${index}" data-field="description" aria-label="Beschreibung für Position ${index + 1}" value="${escapeXml(line.description)}" /></td>
           <td><input class="table-input" data-line-index="${index}" data-field="quantity" type="number" min="0" step="0.01" value="${escapeXml(line.quantity)}" /></td>
           <td><input class="table-input" data-line-index="${index}" data-field="unit" value="${escapeXml(line.unit)}" /></td>
           <td><input class="table-input" data-line-index="${index}" data-field="unitPrice" type="number" min="0" step="0.01" value="${escapeXml(line.unitPrice)}" /></td>
@@ -436,6 +444,7 @@ function syncLineFromInput(lineIndex, field, value) {
 
 function addLine() {
   state.lines.push({
+    itemNumber: '',
     description: 'Neue Position',
     quantity: '1',
     unit: 'Stk.',
@@ -451,6 +460,7 @@ function removeLine(index) {
   if (state.lines.length === 1) {
     state.lines = [
       {
+        itemNumber: '',
         description: 'Neue Position',
         quantity: '1',
         unit: 'Stk.',
@@ -557,6 +567,11 @@ function validateAndShow() {
 
 function buildXmlInvoice(invoice) {
   const profile = profileMap[invoice.profile] ?? profileMap.en16931;
+  const optionalElement = (name, value, attributes = '') => (
+    String(value || '').trim()
+      ? `<ram:${name}${attributes}>${escapeXml(value)}</ram:${name}>`
+      : ''
+  );
   const xmlLines = invoice.lines.map((line) => {
     const rate = Number(line.vat || 0);
     const amounts = calculateLineAmounts(line);
@@ -595,6 +610,7 @@ function buildXmlInvoice(invoice) {
             <ram:LineID>${index + 1}</ram:LineID>
           </ram:AssociatedDocumentLineDocument>
           <ram:SpecifiedTradeProduct>
+            ${optionalElement('SellerAssignedID', line.itemNumber)}
             <ram:Name>${escapeXml(line.description)}</ram:Name>
           </ram:SpecifiedTradeProduct>
           <ram:SpecifiedLineTradeAgreement>
@@ -652,11 +668,6 @@ function buildXmlInvoice(invoice) {
   totals.vat = roundCurrency(Array.from(taxGroups.values()).reduce((sum, group) => sum + group.tax, 0));
   totals.gross = roundCurrency(totals.net + totals.vat);
 
-  const optionalElement = (name, value, attributes = '') => (
-    String(value || '').trim()
-      ? `<ram:${name}${attributes}>${escapeXml(value)}</ram:${name}>`
-      : ''
-  );
   const sellerVat = String(invoice.seller.vat || '').trim()
     ? `<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${escapeXml(invoice.seller.vat)}</ram:ID></ram:SpecifiedTaxRegistration>`
     : '';
@@ -790,6 +801,15 @@ async function generatePdf(invoice, xmlContent) {
   const pageHeight = 841.89;
   const margin = 42;
   const contentWidth = pageWidth - margin * 2;
+  const itemColumns = [
+    { label: 'Artikel-Nr.', width: 72 },
+    { label: 'Beschreibung', width: 130 },
+    { label: 'Menge', width: 43 },
+    { label: 'Preis', width: 68 },
+    { label: 'Rabatt', width: 48 },
+    { label: 'USt.', width: 45 },
+    { label: 'Gesamt', width: 105 },
+  ];
 
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -862,23 +882,17 @@ async function generatePdf(invoice, xmlContent) {
       color: rgb(0.94, 0.96, 0.98),
     });
 
-    const columns = [
-      { label: 'Beschreibung', x: margin, width: 205 },
-      { label: 'Menge', x: margin + 205, width: 50 },
-      { label: 'Preis', x: margin + 255, width: 68 },
-      { label: 'Rabatt', x: margin + 323, width: 52 },
-      { label: 'USt.', x: margin + 375, width: 48 },
-      { label: 'Gesamt', x: margin + 423, width: 88 },
-    ];
-    columns.forEach(({ label, x, width }) => {
+    let columnX = margin;
+    itemColumns.forEach(({ label, width }) => {
       page.drawText(label, {
-        x,
+        x: columnX,
         y: headerY,
         size: 8,
         font: boldFont,
         color: mutedColor,
         maxWidth: width - 5,
       });
+      columnX += width;
     });
     return headerY - 18;
   }
@@ -1011,15 +1025,6 @@ async function generatePdf(invoice, xmlContent) {
 
   let yPos = drawItemsHeader(invoiceDetailsY - 10, 'Positionen');
   const rowHeight = 18;
-  const columns = [
-    { x: margin, width: 205 },
-    { x: margin + 205, width: 50 },
-    { x: margin + 255, width: 68 },
-    { x: margin + 323, width: 52 },
-    { x: margin + 375, width: 48 },
-    { x: margin + 423, width: 88 },
-  ];
-
   invoice.lines.forEach((line) => {
     if (yPos < margin + rowHeight) {
       addPage();
@@ -1042,6 +1047,7 @@ async function generatePdf(invoice, xmlContent) {
 
     const lineAmount = calculateLineAmounts(line);
     const values = [
+      String(line.itemNumber || ''),
       String(line.description || ''),
       Number(line.quantity || 0).toString(),
       currencyFormatter.format(Number(line.unitPrice || 0)),
@@ -1049,16 +1055,18 @@ async function generatePdf(invoice, xmlContent) {
       `${Number(line.vat || 0).toFixed(2)} %`,
       currencyFormatter.format(lineAmount.grossLine),
     ];
+    let columnX = margin;
     values.forEach((value, index) => {
-      const column = columns[index];
+      const column = itemColumns[index];
       const lines = wrapText(value, font, 7.5, column.width - 6);
       page.drawText(lines[0], {
-        x: column.x,
+        x: columnX,
         y: yPos,
         size: 7.5,
         font,
         color: textColor,
       });
+      columnX += column.width;
     });
     page.drawLine({
       start: { x: margin, y: yPos - 6 },

@@ -428,6 +428,16 @@ h1 {
   table-layout: fixed;
 }
 
+.invoice-table .item-number-column { width: 120px; }
+.invoice-table .description-column { width: 220px; }
+.invoice-table .quantity-column { width: 75px; }
+.invoice-table .unit-column { width: 85px; }
+.invoice-table .price-column { width: 100px; }
+.invoice-table .discount-column { width: 85px; }
+.invoice-table .vat-column { width: 75px; }
+.invoice-table .total-column { width: 150px; }
+.invoice-table .action-column { width: 52px; }
+
 .invoice-table th,
 .invoice-table td {
   padding: 8px 6px;
@@ -444,7 +454,7 @@ h1 {
 
 .invoice-table thead th {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -658,7 +668,7 @@ h1 {
   }
 
   .invoice-table {
-    min-width: 860px;
+    min-width: 980px;
   }
 }
 

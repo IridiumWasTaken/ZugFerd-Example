@@ -61,7 +61,8 @@ Die Anwendung deckt die wichtigsten Aspekte eines generischen Test-Workflows ab:
 - Erfassung von allgemeinen Rechnungsdaten
 - Adressdaten für Verkäufer und Käufer
 - Zahlungsarten mit passenden Pflichtfeldern
-- Rechnungspositionen mit Berechnung von Netto, Mehrwertsteuer und Bruttobetrag
+- Rechnungspositionen mit optionaler Artikelnummer sowie Berechnung von Netto,
+  Mehrwertsteuer und Bruttobetrag; BASIC WL exportiert keine Positionen ins XML
 - Validierung wichtiger Pflichtangaben vor dem Download
 - lokales Speichern des aktuellen Entwurfs im Browser
 
