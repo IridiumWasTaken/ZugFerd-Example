@@ -599,7 +599,6 @@ function buildXmlInvoice(invoice) {
               <ram:AppliedTradeAllowanceCharge>
                 <ram:ChargeIndicator><udt:Indicator>false</udt:Indicator></ram:ChargeIndicator>
                 <ram:ActualAmount>${formatTaxAmount(xmlLine.grossUnitPrice * xmlLine.discount / 100)}</ram:ActualAmount>
-                ${invoice.profile === 'xrechnung' ? '' : '<ram:Reason>Rabatt</ram:Reason>'}
               </ram:AppliedTradeAllowanceCharge>
             </ram:GrossPriceProductTradePrice>
           `
